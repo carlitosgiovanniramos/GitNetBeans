@@ -45,6 +45,7 @@ public class EmpleadoFrame extends javax.swing.JFrame {
         validarSoloLetras(jtxtFNombres);
         validarSoloLetras(jtxtFApellidos);
         validarSoloNumeros(jtxtFTelefono, 10);
+        validarSoloNumeros(jtxtFBuscarCedula, 10);
     }
 
     public void cargarColumnaEmpleados() {
@@ -105,6 +106,7 @@ public class EmpleadoFrame extends javax.swing.JFrame {
     }
 
     public void registrarEmpleado() {
+
         Empleado empleado = new Empleado();
 
         empleado.setCedula(jtxtFCedula.getText().trim());
@@ -119,9 +121,23 @@ public class EmpleadoFrame extends javax.swing.JFrame {
         String respuesta = controller.registrarEmpleado(empleado);
 
         if (respuesta.equals("REGISTRADO")) {
-            JOptionPane.showMessageDialog(this, "Empleado registrado correctamente.");
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Empleado y usuario registrados correctamente."
+            );
+
+            cargarFilasEmpleados();
+            nuevoEmpleado();
+
         } else {
-            JOptionPane.showMessageDialog(this, respuesta, "Validación", JOptionPane.WARNING_MESSAGE);
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    respuesta,
+                    "Validación",
+                    JOptionPane.WARNING_MESSAGE
+            );
         }
     }
 
@@ -365,21 +381,6 @@ public class EmpleadoFrame extends javax.swing.JFrame {
         });
     }
 
-    public void cambiarVistaCrearUsuario() {
-        int confirmacion = JOptionPane.showConfirmDialog(
-                this,
-                "¿Está seguro de cambiar a la vista para crear un Usuario? Se perderán los cambios no guardados.",
-                "Confirmar salida",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.WARNING_MESSAGE
-        );
-
-        if (confirmacion == JOptionPane.YES_OPTION) {
-            CrearUsuarioFrame frame = new CrearUsuarioFrame(idEmpleadoSeleccionado);
-            frame.setVisible(true);
-        }
-    }
-
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -409,7 +410,6 @@ public class EmpleadoFrame extends javax.swing.JFrame {
         jbtnEditar = new javax.swing.JButton();
         jbtnEliminar = new javax.swing.JButton();
         jbtnCancelar = new javax.swing.JButton();
-        jButton1 = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         jtblEmpleados = new javax.swing.JTable();
         jPanel5 = new javax.swing.JPanel();
@@ -557,13 +557,6 @@ public class EmpleadoFrame extends javax.swing.JFrame {
                 .addContainerGap(46, Short.MAX_VALUE))
         );
 
-        jButton1.setText("Crear Usuario");
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
-            }
-        });
-
         jtblEmpleados.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null},
@@ -640,18 +633,12 @@ public class EmpleadoFrame extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(jPanel6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jButton1)
-                        .addContainerGap())
                     .addGroup(layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(jLabel1)
-                                .addGap(0, 0, Short.MAX_VALUE))
-                            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 788, Short.MAX_VALUE)))))
+                        .addComponent(jLabel1)
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 788, Short.MAX_VALUE)))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -669,18 +656,13 @@ public class EmpleadoFrame extends javax.swing.JFrame {
                             .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 34, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
+                        .addGap(0, 0, Short.MAX_VALUE)
                         .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 422, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addGap(108, 108, 108))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        cambiarVistaCrearUsuario();
-    }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jbtnEditarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbtnEditarActionPerformed
         // TODO add your handling code here:
@@ -748,7 +730,6 @@ public class EmpleadoFrame extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel2;

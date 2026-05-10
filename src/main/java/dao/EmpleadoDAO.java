@@ -62,18 +62,22 @@ public class EmpleadoDAO {
         return lista;
     }
 
-    public boolean insertarEmpleado(Empleado empleado) {
+    public int insertarEmpleadoRetornarId(Empleado empleado) {
+
         String sql = """
-            INSERT INTO empleados 
-            (cedula, nombres, apellidos, telefono, correo, tipo_empleado, sueldo_fijo, valor_hora, estado)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """;
+        INSERT INTO empleados 
+        (cedula, nombres, apellidos, telefono, correo, tipo_empleado, sueldo_fijo, valor_hora, estado)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """;
 
         try {
             Conexion conexion = new Conexion();
             Connection con = conexion.conectar();
 
-            PreparedStatement ps = con.prepareStatement(sql);
+            PreparedStatement ps = con.prepareStatement(
+                    sql,
+                    PreparedStatement.RETURN_GENERATED_KEYS
+            );
 
             ps.setString(1, empleado.getCedula());
             ps.setString(2, empleado.getNombres());
@@ -85,12 +89,22 @@ public class EmpleadoDAO {
             ps.setDouble(8, empleado.getValorHora());
             ps.setBoolean(9, empleado.isEstado());
 
-            return ps.executeUpdate() > 0;
+            int filas = ps.executeUpdate();
+
+            if (filas > 0) {
+
+                ResultSet rs = ps.getGeneratedKeys();
+
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
 
         } catch (Exception e) {
             System.out.println("Error al registrar empleado: " + e.getMessage());
-            return false;
         }
+
+        return 0;
     }
 
     public boolean existeCedula(String cedula) {
@@ -112,6 +126,30 @@ public class EmpleadoDAO {
 
         } catch (Exception e) {
             System.out.println("Error al verificar cédula: " + e.getMessage());
+        }
+
+        return false;
+    }
+
+    public boolean existeCorreo(String correo) {
+
+        String sql = "SELECT COUNT(*) FROM empleados WHERE correo = ?";
+
+        try {
+            Conexion conexion = new Conexion();
+            Connection con = conexion.conectar();
+
+            PreparedStatement ps = con.prepareStatement(sql);
+            ps.setString(1, correo);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+
+        } catch (Exception e) {
+            System.out.println("Error al verificar correo: " + e.getMessage());
         }
 
         return false;
@@ -188,8 +226,14 @@ public class EmpleadoDAO {
 
     public boolean eliminarEmpleado(int idEmpleado) {
 
-        String sql = """
+        String sqlEmpleado = """
         UPDATE empleados
+        SET estado = false
+        WHERE id_empleado = ?
+    """;
+
+        String sqlUsuario = """
+        UPDATE usuarios
         SET estado = false
         WHERE id_empleado = ?
     """;
@@ -198,13 +242,18 @@ public class EmpleadoDAO {
             Conexion conexion = new Conexion();
             Connection con = conexion.conectar();
 
-            PreparedStatement ps = con.prepareStatement(sql);
-            ps.setInt(1, idEmpleado);
+            PreparedStatement psEmpleado = con.prepareStatement(sqlEmpleado);
+            psEmpleado.setInt(1, idEmpleado);
+            int filasEmpleado = psEmpleado.executeUpdate();
 
-            return ps.executeUpdate() > 0;
+            PreparedStatement psUsuario = con.prepareStatement(sqlUsuario);
+            psUsuario.setInt(1, idEmpleado);
+            psUsuario.executeUpdate();
+
+            return filasEmpleado > 0;
 
         } catch (Exception e) {
-            System.out.println("Error al eliminar empleado: " + e.getMessage());
+            System.out.println("Error al eliminar empleado y usuario: " + e.getMessage());
             return false;
         }
     }

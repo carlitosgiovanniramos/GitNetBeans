@@ -5,8 +5,10 @@
 package controlador;
 
 import dao.EmpleadoDAO;
+import dao.UsuarioDAO;
 import java.util.List;
 import modelo.Empleado;
+import modelo.Usuario;
 
 /**
  *
@@ -15,6 +17,7 @@ import modelo.Empleado;
 public class EmpleadoController {
 
     private EmpleadoDAO empleadoDAO = new EmpleadoDAO();
+    private UsuarioDAO usuarioDAO = new UsuarioDAO();
 
     public String registrarEmpleado(Empleado empleado) {
 
@@ -30,12 +33,27 @@ public class EmpleadoController {
             return "La cédula ya está registrada.";
         }
 
+        if (empleadoDAO.existeCorreo(empleado.getCorreo())) {
+            return "El Correo ya está registrado.";
+        }
+
         aplicarReglasTipoEmpleado(empleado);
         empleado.setEstado(true);
 
-        boolean registrado = empleadoDAO.insertarEmpleado(empleado);
+        int idEmpleado = empleadoDAO.insertarEmpleadoRetornarId(empleado);
 
-        if (registrado) {
+        if (idEmpleado > 0) {
+
+            Usuario usuario = new Usuario();
+
+            usuario.setIdEmpleado(idEmpleado);
+            usuario.setUsuario(empleado.getCorreo());
+            usuario.setPassword(empleado.getCedula());
+            usuario.setRol("EMPLEADO");
+            usuario.setEstado(true);
+
+            usuarioDAO.insertarUsuario(usuario);
+
             return "REGISTRADO";
         }
 
@@ -68,6 +86,11 @@ public class EmpleadoController {
         boolean actualizado = empleadoDAO.actualizarEmpleado(empleado);
 
         if (actualizado) {
+            usuarioDAO.actualizarUsuarioPorEmpleado(
+                    empleado.getIdEmpleado(),
+                    empleado.getCorreo(),
+                    empleado.getCedula()
+            );
             return "ACTUALIZADO";
         }
 
