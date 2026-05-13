@@ -1,32 +1,42 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
- */
 package vista;
 
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Font;
+import javax.swing.BorderFactory;
+import javax.swing.SwingConstants;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.JTableHeader;
 import controlador.AsistenciaController;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import javax.swing.SwingUtilities;
+import java.time.format.DateTimeFormatter;
+import javax.swing.JOptionPane;
+import javax.swing.Timer;
 import javax.swing.table.DefaultTableModel;
 import modelo.Asistencia;
 
-/**
- *
- * @author Lenovo LOQ
- */
 public class AsistenciaFrame extends javax.swing.JFrame {
 
-    /**
-     * Creates new form AsistenciaFrame
-     */
     private int idEmpleado;
     private String nombreEmpleado;
     private AsistenciaController controller;
-    private boolean hiloActivo = true;
     private DefaultTableModel modeloTablaAsistencia;
+    private Timer relojTimer;
 
     public AsistenciaFrame() {
+        initComponents();
+        this.idEmpleado = 0;
+        this.nombreEmpleado = "";
+        this.controller = new AsistenciaController();
+
+        jlblEmpleado.setText("Sin empleado");
+        jlblFecha.setText(LocalDate.now().toString());
+
+        cargarColumnasTablaAsistencia();
+        limpiarChecks();
+        iniciarReloj();
+        aplicarDiseno();
     }
 
     public AsistenciaFrame(int idEmpleado, String nombreEmpleado) {
@@ -40,104 +50,83 @@ public class AsistenciaFrame extends javax.swing.JFrame {
         jlblFecha.setText(LocalDate.now().toString());
 
         cargarColumnasTablaAsistencia();
-        checkBoxInactivo();
+        configurarEventos();
         cargarResumen();
-        iniciarHiloHorario();
+        iniciarReloj();
+        aplicarDiseno();
+    }
+
+    private void iniciarReloj() {
+        DateTimeFormatter formato = DateTimeFormatter.ofPattern("HH:mm:ss");
+
+        jlblReloj.setText(LocalTime.now().format(formato));
+
+        relojTimer = new Timer(1000, e -> {
+            jlblReloj.setText(LocalTime.now().format(formato));
+        });
+
+        relojTimer.start();
     }
 
     public void cargarColumnasTablaAsistencia() {
-        String[] columnas = {"Entrada Mañana", "Salida Mañana", "Entrada Tarde", "Salida Tarde", "Atraso", "Horas trabajadas", "Descuento"};
-        modeloTablaAsistencia = new DefaultTableModel(null, columnas);
+        String[] columnas = {
+            "Entrada Mañana",
+            "Salida Mañana",
+            "Entrada Tarde",
+            "Salida Tarde",
+            "Min. Atraso",
+            "Horas trabajadas",
+            "Descuento"
+        };
+
+        modeloTablaAsistencia = new DefaultTableModel(null, columnas) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
         jtblAsistencia.setModel(modeloTablaAsistencia);
     }
 
-    public void checkBoxInactivo() {
-        jchxEntradaManana.setEnabled(false);
-        jchxSalidaManana.setEnabled(false);
-        jchxEntradaTarde.setEnabled(false);
-        jchxSalidaTarde.setEnabled(false);
+    private void configurarEventos() {
+        jchxEntradaManana.addActionListener(e -> registrarEntradaManana());
+        jchxSalidaManana.addActionListener(e -> registrarSalidaManana());
+        jchxEntradaTarde.addActionListener(e -> registrarEntradaTarde());
+        jchxSalidaTarde.addActionListener(e -> registrarSalidaTarde());
     }
 
-    private void iniciarHiloHorario() {
-
-        Thread hilo = new Thread(() -> {
-
-            while (hiloActivo) {
-
-                LocalTime horaActual = LocalTime.now();
-
-                SwingUtilities.invokeLater(() -> {
-                    if (controller != null) {
-                        controlarCheckBoxPorHora(horaActual);
-                    }
-                });
-
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    hiloActivo = false;
-                    Thread.currentThread().interrupt();
-                }
-            }
-        });
-
-        hilo.start();
-    }
-
-    private void controlarCheckBoxPorHora(LocalTime horaActual) {
-
-        Asistencia asistencia = controller.buscarAsistenciaDelDia(idEmpleado);
-
-        if (asistencia == null || asistencia.getHoraEntradaManana() == null) {
-            jchxEntradaManana.setEnabled(!horaActual.isBefore(LocalTime.of(8, 0)));
-        }
-
-        if (asistencia != null
-                && asistencia.getHoraEntradaManana() != null
-                && asistencia.getHoraSalidaManana() == null) {
-            jchxSalidaManana.setEnabled(!horaActual.isBefore(LocalTime.of(13, 0)));
-        }
-
-        if (asistencia != null
-                && asistencia.getHoraSalidaManana() != null
-                && asistencia.getHoraEntradaTarde() == null) {
-            jchxEntradaTarde.setEnabled(!horaActual.isBefore(LocalTime.of(14, 0)));
-        }
-
-        if (asistencia != null
-                && asistencia.getHoraEntradaTarde() != null
-                && asistencia.getHoraSalidaTarde() == null) {
-            jchxSalidaTarde.setEnabled(!horaActual.isBefore(LocalTime.of(17, 0)));
-        }
-    }
-
-    private void jchxEntradaMananaActionPerformed(java.awt.event.ActionEvent evt) {
+    private void registrarEntradaManana() {
         String mensaje = controller.registrarEntradaManana(idEmpleado);
-        javax.swing.JOptionPane.showMessageDialog(this, mensaje);
+        JOptionPane.showMessageDialog(this, mensaje);
         cargarResumen();
     }
 
-    private void jchxSalidaMananaActionPerformed(java.awt.event.ActionEvent evt) {
+    private void registrarSalidaManana() {
         String mensaje = controller.registrarSalidaManana(idEmpleado);
-        javax.swing.JOptionPane.showMessageDialog(this, mensaje);
+        JOptionPane.showMessageDialog(this, mensaje);
         cargarResumen();
     }
 
-    private void jchxEntradaTardeActionPerformed(java.awt.event.ActionEvent evt) {
+    private void registrarEntradaTarde() {
         String mensaje = controller.registrarEntradaTarde(idEmpleado);
-        javax.swing.JOptionPane.showMessageDialog(this, mensaje);
+        JOptionPane.showMessageDialog(this, mensaje);
         cargarResumen();
     }
 
-    private void jchxSalidaTardeActionPerformed(java.awt.event.ActionEvent evt) {
+    private void registrarSalidaTarde() {
         String mensaje = controller.registrarSalidaTarde(idEmpleado);
-        javax.swing.JOptionPane.showMessageDialog(this, mensaje);
+        JOptionPane.showMessageDialog(this, mensaje);
         cargarResumen();
     }
 
     private void cargarResumen() {
-
         modeloTablaAsistencia.setRowCount(0);
+
+        if (idEmpleado <= 0) {
+            limpiarChecks();
+            return;
+        }
 
         Asistencia a = controller.buscarAsistenciaDelDia(idEmpleado);
 
@@ -151,13 +140,154 @@ public class AsistenciaFrame extends javax.swing.JFrame {
                 a.getHorasTrabajadas(),
                 a.getDescuento()
             });
+
+            actualizarEstadoChecks(a);
+        } else {
+            limpiarChecks();
         }
     }
 
-    private void formWindowClosing(java.awt.event.WindowEvent evt) {
-        hiloActivo = false;
+    private void limpiarChecks() {
+        jchxEntradaManana.setSelected(false);
+        jchxSalidaManana.setSelected(false);
+        jchxEntradaTarde.setSelected(false);
+        jchxSalidaTarde.setSelected(false);
+
+        jchxEntradaManana.setEnabled(idEmpleado > 0);
+        jchxSalidaManana.setEnabled(false);
+        jchxEntradaTarde.setEnabled(false);
+        jchxSalidaTarde.setEnabled(false);
     }
 
+    private void actualizarEstadoChecks(Asistencia a) {
+        jchxEntradaManana.setSelected(a.getHoraEntradaManana() != null);
+        jchxSalidaManana.setSelected(a.getHoraSalidaManana() != null);
+        jchxEntradaTarde.setSelected(a.getHoraEntradaTarde() != null);
+        jchxSalidaTarde.setSelected(a.getHoraSalidaTarde() != null);
+
+        jchxEntradaManana.setEnabled(a.getHoraEntradaManana() == null);
+        jchxSalidaManana.setEnabled(a.getHoraEntradaManana() != null && a.getHoraSalidaManana() == null);
+        jchxEntradaTarde.setEnabled(a.getHoraSalidaManana() != null && a.getHoraEntradaTarde() == null);
+        jchxSalidaTarde.setEnabled(a.getHoraEntradaTarde() != null && a.getHoraSalidaTarde() == null);
+    }
+    
+   private void aplicarDiseno() {
+    Color fondo = new Color(242, 242, 242);
+    Color rojo = new Color(150, 55, 60);
+    Color rojoOscuro = new Color(120, 35, 40);
+    Color grisHeader = new Color(65, 65, 65);
+    Color verdeEntrada = new Color(170, 255, 170);
+    Color rojoSalida = new Color(255, 170, 170);
+
+    getContentPane().setBackground(fondo);
+    jPanel1.setBackground(fondo);
+    jPanel2.setBackground(Color.WHITE);
+    jPanel3.setBackground(Color.WHITE);
+    jPanel4.setBackground(Color.WHITE);
+
+    jPanel2.setBorder(BorderFactory.createLineBorder(new Color(190, 190, 190), 1));
+    jPanel3.setBorder(BorderFactory.createLineBorder(rojo, 2));
+    jPanel4.setBorder(BorderFactory.createLineBorder(rojo, 2));
+
+    jLabel1.setForeground(Color.BLACK);
+
+    jLabel4.setForeground(rojoOscuro);
+    jLabel9.setForeground(rojoOscuro);
+    jLabel14.setForeground(rojoOscuro);
+
+    jLabel4.setFont(new Font("Segoe UI", Font.BOLD, 14));
+    jLabel9.setFont(new Font("Segoe UI", Font.BOLD, 14));
+    jLabel14.setFont(new Font("Segoe UI", Font.BOLD, 14));
+
+    jLabel15.setForeground(Color.DARK_GRAY);
+    jLabel16.setForeground(Color.DARK_GRAY);
+
+    jlblReloj.setOpaque(true);
+    jlblReloj.setBackground(rojo);
+    jlblReloj.setForeground(Color.WHITE);
+    jlblReloj.setHorizontalAlignment(SwingConstants.CENTER);
+    jlblReloj.setBorder(BorderFactory.createLineBorder(rojoOscuro, 2));
+
+    jtblAsistencia.setRowHeight(28);
+    jtblAsistencia.setGridColor(new Color(220, 220, 220));
+    jtblAsistencia.setForeground(Color.BLACK);
+
+    JTableHeader header = jtblAsistencia.getTableHeader();
+    header.setReorderingAllowed(false);
+    header.setResizingAllowed(true);
+    header.setOpaque(true);
+    header.setBackground(grisHeader);
+    header.setForeground(Color.WHITE);
+    header.setFont(new Font("Segoe UI", Font.BOLD, 12));
+
+    DefaultTableCellRenderer renderHeader = new DefaultTableCellRenderer() {
+        @Override
+        public Component getTableCellRendererComponent(
+                javax.swing.JTable table,
+                Object value,
+                boolean isSelected,
+                boolean hasFocus,
+                int row,
+                int column) {
+            Component c = super.getTableCellRendererComponent(
+                    table, value, isSelected, hasFocus, row, column);
+            c.setBackground(grisHeader);
+            c.setForeground(Color.WHITE);
+            c.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            setHorizontalAlignment(SwingConstants.CENTER);
+            setBorder(BorderFactory.createLineBorder(new Color(20, 20, 20)));
+            return c;
+        }
+    };
+
+    for (int i = 0; i < jtblAsistencia.getColumnModel().getColumnCount(); i++) {
+        jtblAsistencia.getColumnModel().getColumn(i).setHeaderRenderer(renderHeader);
+    }
+
+    jtblAsistencia.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+        @Override
+        public Component getTableCellRendererComponent(
+                javax.swing.JTable table,
+                Object value,
+                boolean isSelected,
+                boolean hasFocus,
+                int row,
+                int column) {
+
+            Component c = super.getTableCellRendererComponent(
+                    table, value, isSelected, hasFocus, row, column);
+
+            setHorizontalAlignment(SwingConstants.CENTER);
+
+            if (!isSelected) {
+                if (column == 0 || column == 2) {
+                    c.setBackground(verdeEntrada);
+                } else if (column == 1 || column == 3) {
+                    c.setBackground(rojoSalida);
+                } else {
+                    c.setBackground(Color.WHITE);
+                }
+
+                c.setForeground(Color.BLACK);
+            }
+
+            return c;
+        }
+    });
+
+    jScrollPane1.setBorder(BorderFactory.createLineBorder(new Color(180, 180, 180), 1));
+
+    jchxEntradaManana.setBackground(Color.WHITE);
+    jchxSalidaManana.setBackground(Color.WHITE);
+    jchxEntradaTarde.setBackground(Color.WHITE);
+    jchxSalidaTarde.setBackground(Color.WHITE);
+
+    jchxEntradaManana.setFocusPainted(false);
+    jchxSalidaManana.setFocusPainted(false);
+    jchxEntradaTarde.setFocusPainted(false);
+    jchxSalidaTarde.setFocusPainted(false);
+    jtblAsistencia.getTableHeader().repaint();
+}
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -195,6 +325,7 @@ public class AsistenciaFrame extends javax.swing.JFrame {
         jtblAsistencia = new javax.swing.JTable();
         jLabel15 = new javax.swing.JLabel();
         jLabel16 = new javax.swing.JLabel();
+        jlblReloj = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -228,13 +359,13 @@ public class AsistenciaFrame extends javax.swing.JFrame {
                     .addComponent(jlblEmpleado, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(jPanel2Layout.createSequentialGroup()
                         .addComponent(jlblFecha, javax.swing.GroupLayout.PREFERRED_SIZE, 135, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 79, Short.MAX_VALUE)))
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
-                .addContainerGap(33, Short.MAX_VALUE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
                     .addComponent(jlblEmpleado))
@@ -249,6 +380,12 @@ public class AsistenciaFrame extends javax.swing.JFrame {
         jPanel3.setBorder(javax.swing.BorderFactory.createEtchedBorder());
 
         jLabel5.setText("Entrada:");
+
+        jchxEntradaManana.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jchxEntradaMananaActionPerformed(evt);
+            }
+        });
 
         jLabel6.setText("8:00 am");
 
@@ -358,6 +495,7 @@ public class AsistenciaFrame extends javax.swing.JFrame {
         jLabel14.setFont(new java.awt.Font("Segoe UI Semibold", 0, 14)); // NOI18N
         jLabel14.setText("Resumen del Dia");
 
+        jtblAsistencia.setForeground(new java.awt.Color(102, 102, 102));
         jtblAsistencia.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null},
@@ -375,15 +513,27 @@ public class AsistenciaFrame extends javax.swing.JFrame {
 
         jLabel16.setText("14:00 pm - 17:00");
 
+        jlblReloj.setFont(new java.awt.Font("Segoe UI Semibold", 0, 48)); // NOI18N
+        jlblReloj.setText("00:00:00");
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 222, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(259, 259, 259))
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(265, 265, 265)
-                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 222, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(18, 18, 18)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jScrollPane1)
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addGap(16, 16, 16)
+                                .addComponent(jLabel14, javax.swing.GroupLayout.PREFERRED_SIZE, 158, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(0, 0, Short.MAX_VALUE))))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGap(95, 95, 95)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
@@ -396,44 +546,44 @@ public class AsistenciaFrame extends javax.swing.JFrame {
                                 .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 158, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                 .addComponent(jLabel15))
-                            .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jPanel3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(0, 87, Short.MAX_VALUE))
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(18, 18, 18)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel14, javax.swing.GroupLayout.PREFERRED_SIZE, 158, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 715, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(206, 206, 206)
-                        .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addGap(0, 26, Short.MAX_VALUE))
+                        .addGap(53, 53, 53)
+                        .addComponent(jlblReloj, javax.swing.GroupLayout.PREFERRED_SIZE, 261, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(32, 32, 32)
+                        .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                .addGap(26, 26, 26))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGap(29, 29, 29)
+                .addGap(24, 24, 24)
                 .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jlblReloj, javax.swing.GroupLayout.PREFERRED_SIZE, 74, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(27, 27, 27)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel4)
                     .addComponent(jLabel15))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel9)
-                    .addComponent(jLabel16))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jLabel16))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addGap(15, 15, 15)
+                        .addComponent(jLabel9)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 33, Short.MAX_VALUE)
                 .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGap(18, 18, 18)
                 .addComponent(jLabel14)
-                .addGap(9, 9, 9)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 240, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(32, Short.MAX_VALUE))
+                .addGap(18, 18, 18)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(14, 14, 14))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -449,6 +599,10 @@ public class AsistenciaFrame extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void jchxEntradaMananaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jchxEntradaMananaActionPerformed
+        
+    }//GEN-LAST:event_jchxEntradaMananaActionPerformed
 
     /**
      * @param args the command line arguments
@@ -513,6 +667,7 @@ public class AsistenciaFrame extends javax.swing.JFrame {
     private javax.swing.JCheckBox jchxSalidaTarde;
     private javax.swing.JLabel jlblEmpleado;
     private javax.swing.JLabel jlblFecha;
+    private javax.swing.JLabel jlblReloj;
     private javax.swing.JTable jtblAsistencia;
     // End of variables declaration//GEN-END:variables
 }
