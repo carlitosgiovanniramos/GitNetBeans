@@ -115,7 +115,7 @@ public class EmpleadoController {
     public Empleado buscarEmpleadoPorCedula(String cedula) {
         return empleadoDAO.buscarPorCedula(cedula);
     }
-
+    
     private void normalizarDatos(Empleado empleado) {
         empleado.setCedula(limpiarTexto(empleado.getCedula()));
         empleado.setNombres(limpiarTexto(empleado.getNombres()));
