@@ -8,13 +8,12 @@
     
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>23</maven.compiler.source>
-        <maven.compiler.target>23</maven.compiler.target>
+        <maven.compiler.source>19</maven.compiler.source>
+        <maven.compiler.target>19</maven.compiler.target>
         <exec.mainClass>vista.LoginFrame</exec.mainClass>
     </properties>
     
     <dependencies>
-        <!-- Tu conector de MySQL que ya tenías -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
@@ -22,14 +21,18 @@
             <scope>compile</scope>
         </dependency>
         
-        <!-- LIBRERÍA DE JASPERREPORTS (La que soluciona el error) -->
+        <dependency>
+            <groupId>com.toedter</groupId>
+            <artifactId>jcalendar</artifactId>
+            <version>1.4</version>
+        </dependency>
+
         <dependency>
             <groupId>net.sf.jasperreports</groupId>
             <artifactId>jasperreports</artifactId>
             <version>6.20.0</version> 
         </dependency>
         
-        <!-- Librería Groovy para el reporte -->
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
