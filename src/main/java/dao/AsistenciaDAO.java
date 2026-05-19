@@ -11,6 +11,8 @@ import java.sql.SQLException;
 import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AsistenciaDAO {
 
@@ -193,4 +195,68 @@ public class AsistenciaDAO {
             return false;
         }
     }
+    public List<Asistencia> listarAsistenciasPorMes(int idEmpleado, int mes, int anio) {
+        List<Asistencia> lista = new ArrayList<>();
+        String sql = "SELECT * FROM asistencias WHERE id_empleado = ? AND MONTH(fecha) = ? AND YEAR(fecha) = ? ORDER BY fecha ASC";
+        
+       
+        try (Connection con = new Conexion().conectar();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            
+            ps.setInt(1, idEmpleado);
+            ps.setInt(2, mes);
+            ps.setInt(3, anio);
+            
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Asistencia asis = new Asistencia();
+                    asis.setIdAsistencia(rs.getInt("id_asistencia"));
+                    asis.setFecha(rs.getDate("fecha").toLocalDate());
+                    
+                    Time entradaManana = rs.getTime("hora_entrada_manana");
+                    Time salidaManana = rs.getTime("hora_salida_manana");
+                    Time entradaTarde = rs.getTime("hora_entrada_tarde");
+                    Time salidaTarde = rs.getTime("hora_salida_tarde");
+                    
+                    if (entradaManana != null) asis.setHoraEntradaManana(entradaManana.toLocalTime());
+                    if (salidaManana != null) asis.setHoraSalidaManana(salidaManana.toLocalTime());
+                    if (entradaTarde != null) asis.setHoraEntradaTarde(entradaTarde.toLocalTime());
+                    if (salidaTarde != null) asis.setHoraSalidaTarde(salidaTarde.toLocalTime());
+                    
+                    asis.setMinutosAtraso(rs.getInt("minutos_atraso"));
+                    
+                    // Usamos getDouble para no chocar con el modelo
+                    asis.setHorasTrabajadas(rs.getDouble("horas_trabajadas"));
+                    asis.setDescuento(rs.getDouble("descuento"));
+                    
+                    lista.add(asis);
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Error al listar asistencias: " + e.getMessage());
+        }
+        return lista;
+    }
+
+    public double calcularDescuentoMensual(int idEmpleado, int mes, int anio) {
+        double totalDescuento = 0.0;
+        String sql = "SELECT SUM(descuento) AS total_desc FROM asistencias WHERE id_empleado = ? AND MONTH(fecha) = ? AND YEAR(fecha) = ?";
+        
+        try (Connection con = new Conexion().conectar();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            
+            ps.setInt(1, idEmpleado);
+            ps.setInt(2, mes);
+            ps.setInt(3, anio);
+            
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    totalDescuento = rs.getDouble("total_desc");
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Error al calcular descuento: " + e.getMessage());
+        }
+        return totalDescuento;
+    }  
 }
