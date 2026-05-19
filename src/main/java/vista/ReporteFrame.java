@@ -4,8 +4,12 @@
  */
 package vista;
 
+import controlador.ReporteController;
+import controlador.ValidadorController;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
+import modelo.Asistencia;
+import modelo.ReporteTiempoCompleto;
 
 /**
  *
@@ -13,48 +17,155 @@ import javax.swing.table.DefaultTableModel;
  */
 public class ReporteFrame extends javax.swing.JFrame {
 
-  
     public ReporteFrame() {
         initComponents();
         cargarColumnas();
     }
 
-    DefaultTableModel modelo; 
+    DefaultTableModel modelo;
+
     public void cargarColumnas() {
-    String[] columnas = {"Fecha", "E. Mañana", "S. Mañana", "E. Tarde", "S. Tarde", "Atraso", "Horas", "Desc."};
-    modelo = new DefaultTableModel(null, columnas);
-    tblReporte.setModel(modelo); 
-}
-   
+        String[] columnas = {"Fecha", "E. Mañana", "S. Mañana", "E. Tarde", "S. Tarde", "Atraso", "Horas", "Desc."};
+        modelo = new DefaultTableModel(null, columnas);
+        tblReporte.setModel(modelo);
+    }
+
+    public void consultarAsistencias() {
+        try {
+
+            String cedula = txtCedula.getText().trim();
+            ValidadorController.validarSoloNumeros(txtCedula, 10);
+
+            if (!cedula.matches("\\d{10}")) {
+                JOptionPane.showMessageDialog(this,
+                        "La cédula debe tener exactamente 10 números.",
+                        "Error",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            int mes = jMonthChooser.getMonth() + 1;
+            int anio = jYearChooser1.getYear();
+
+            if (mes < 1 || mes > 12) {
+                JOptionPane.showMessageDialog(this,
+                        "El mes debe estar entre 1 y 12.",
+                        "Error",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            if (anio < 2000 || anio > 2100) {
+                JOptionPane.showMessageDialog(this,
+                        "Por favor ingrese un año válido.",
+                        "Error",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            ReporteController control = new ReporteController();
+            ReporteTiempoCompleto data
+                    = control.generarReporteTiempoCompleto(cedula, mes, anio);
+
+            if (data.getAsistencias().isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                        "El empleado existe, pero no tiene asistencias registradas en "
+                        + mes + "/" + anio + ".",
+                        "Sin datos",
+                        JOptionPane.INFORMATION_MESSAGE);
+
+                modelo.setRowCount(0);
+                lblSueldoFijo.setText("Sueldo fijo: $1500.00");
+                lblDescuentoTotal.setText("Descuento total: $0.00");
+                lblSueldoPagar.setText("Sueldo a pagar: $1500.00");
+                return;
+            }
+
+            modelo.setRowCount(0);
+
+            for (Asistencia asis : data.getAsistencias()) {
+                Object[] registros = {
+                    asis.getFecha().toString(),
+                    asis.getHoraEntradaManana() != null ? asis.getHoraEntradaManana().toString() : "--:--",
+                    asis.getHoraSalidaManana() != null ? asis.getHoraSalidaManana().toString() : "--:--",
+                    asis.getHoraEntradaTarde() != null ? asis.getHoraEntradaTarde().toString() : "--:--",
+                    asis.getHoraSalidaTarde() != null ? asis.getHoraSalidaTarde().toString() : "--:--",
+                    asis.getMinutosAtraso(),
+                    asis.getHorasTrabajadas(),
+                    String.format("%.2f", asis.getDescuento())
+                };
+
+                modelo.addRow(registros);
+            }
+
+            lblSueldoFijo.setText("Sueldo fijo: $1500.00");
+            lblDescuentoTotal.setText(String.format("Descuento total: $%.2f", data.getDescuentoTotal()));
+            lblSueldoPagar.setText(String.format("Sueldo a pagar: $%.2f", data.getSueldoFinal()));
+
+        } catch (IllegalArgumentException e) {
+            JOptionPane.showMessageDialog(this,
+                    e.getMessage(),
+                    "Atención",
+                    JOptionPane.WARNING_MESSAGE);
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Error crítico: " + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    public void generarReportes() {
+        try (java.sql.Connection con = new conexion.Conexion().conectar()) {
+
+            java.util.Map<String, Object> parametros = new java.util.HashMap<>();
+            parametros.put("cedula", txtCedula.getText().trim());
+            parametros.put("mes", (jMonthChooser.getMonth() + 1));
+            parametros.put("anio", jYearChooser1.getYear());
+
+            String ruta = "src/main/java/reportes/reporteCompleto.jasper";
+            net.sf.jasperreports.engine.JasperPrint jp = net.sf.jasperreports.engine.JasperFillManager.fillReport(ruta, parametros, con);
+
+            // Evitamos que cierre todo el sistema al cerrar el PDF
+            net.sf.jasperreports.view.JasperViewer jv = new net.sf.jasperreports.view.JasperViewer(jp, false);
+            jv.setTitle("Reporte Mensual");
+            jv.setVisible(true);
+
+        } catch (Exception e) {
+            javax.swing.JOptionPane.showMessageDialog(this, "Asegúrese de haber consultado primero los datos válidos.\nError: " + e.getMessage(), "Error al generar PDF", javax.swing.JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jPanel2 = new javax.swing.JPanel();
         jPanel1 = new javax.swing.JPanel();
-        txtAnio = new javax.swing.JTextField();
         btnConsultar = new javax.swing.JButton();
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
         btnExportar = new javax.swing.JButton();
-        lblSueldoFijo = new javax.swing.JLabel();
         txtCedula = new javax.swing.JTextField();
-        lblDescuentoTotal = new javax.swing.JLabel();
-        txtMes = new javax.swing.JTextField();
-        lblSueldoPagar = new javax.swing.JLabel();
-        jPanel2 = new javax.swing.JPanel();
+        jMonthChooser = new com.toedter.calendar.JMonthChooser();
+        jYearChooser1 = new com.toedter.calendar.JYearChooser();
         jScrollPane1 = new javax.swing.JScrollPane();
         tblReporte = new javax.swing.JTable();
+        jPanel3 = new javax.swing.JPanel();
+        lblSueldoFijo = new javax.swing.JLabel();
+        lblDescuentoTotal = new javax.swing.JLabel();
+        lblSueldoPagar = new javax.swing.JLabel();
+        jLabel4 = new javax.swing.JLabel();
+        jPanel4 = new javax.swing.JPanel();
+        jLabel8 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        jPanel1.setBackground(new java.awt.Color(146, 53, 53));
+        jPanel2.setBackground(new java.awt.Color(255, 255, 255));
 
-        txtAnio.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                txtAnioActionPerformed(evt);
-            }
-        });
+        jPanel1.setBackground(new java.awt.Color(146, 53, 53));
 
         btnConsultar.setText("CONSULTA");
         btnConsultar.addActionListener(new java.awt.event.ActionListener() {
@@ -80,8 +191,6 @@ public class ReporteFrame extends javax.swing.JFrame {
             }
         });
 
-        lblSueldoFijo.setBackground(new java.awt.Color(153, 0, 51));
-
         txtCedula.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 txtCedulaActionPerformed(evt);
@@ -93,65 +202,51 @@ public class ReporteFrame extends javax.swing.JFrame {
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGap(36, 36, 36)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(22, 22, 22)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(txtCedula)
-                            .addComponent(txtMes)
-                            .addComponent(txtAnio, javax.swing.GroupLayout.PREFERRED_SIZE, 122, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(18, 18, 18)
+                                .addComponent(jYearChooser1, javax.swing.GroupLayout.PREFERRED_SIZE, 127, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(18, 18, 18)
+                                .addComponent(txtCedula, javax.swing.GroupLayout.PREFERRED_SIZE, 127, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGap(31, 31, 31)
+                        .addComponent(btnConsultar, javax.swing.GroupLayout.PREFERRED_SIZE, 124, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 172, Short.MAX_VALUE)
+                        .addComponent(btnExportar, javax.swing.GroupLayout.PREFERRED_SIZE, 124, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(29, 29, 29))
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(lblSueldoFijo, javax.swing.GroupLayout.PREFERRED_SIZE, 122, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(67, 67, 67)
-                        .addComponent(lblDescuentoTotal, javax.swing.GroupLayout.PREFERRED_SIZE, 149, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(lblSueldoPagar, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 184, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnExportar, javax.swing.GroupLayout.PREFERRED_SIZE, 267, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnConsultar, javax.swing.GroupLayout.PREFERRED_SIZE, 273, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(144, 144, 144))
+                        .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(jMonthChooser, javax.swing.GroupLayout.PREFERRED_SIZE, 138, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addGap(23, 23, 23)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(txtCedula, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel1)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(txtCedula, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel1)
+                            .addComponent(btnConsultar))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jLabel2)
+                            .addComponent(jMonthChooser, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(13, 13, 13)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jLabel3)
+                            .addComponent(jYearChooser1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addComponent(btnExportar))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(txtMes, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel2))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(txtAnio, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel3)
-                    .addComponent(btnConsultar))
-                .addGap(41, 41, 41)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(lblSueldoPagar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(lblDescuentoTotal, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(lblSueldoFijo, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(33, Short.MAX_VALUE))
+                .addContainerGap(35, Short.MAX_VALUE))
         );
 
-        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
-        jPanel2.setLayout(jPanel2Layout);
-        jPanel2Layout.setHorizontalGroup(
-            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 752, Short.MAX_VALUE)
-        );
-        jPanel2Layout.setVerticalGroup(
-            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 438, Short.MAX_VALUE)
-        );
-
-        tblReporte.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0), 1, true));
         tblReporte.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null},
@@ -165,31 +260,114 @@ public class ReporteFrame extends javax.swing.JFrame {
         ));
         jScrollPane1.setViewportView(tblReporte);
 
+        jPanel3.setBackground(new java.awt.Color(255, 255, 255));
+        jPanel3.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+
+        lblSueldoFijo.setBackground(new java.awt.Color(153, 0, 51));
+
+        javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
+        jPanel3.setLayout(jPanel3Layout);
+        jPanel3Layout.setHorizontalGroup(
+            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel3Layout.createSequentialGroup()
+                .addGap(19, 19, 19)
+                .addComponent(lblSueldoFijo, javax.swing.GroupLayout.PREFERRED_SIZE, 162, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 84, Short.MAX_VALUE)
+                .addComponent(lblDescuentoTotal, javax.swing.GroupLayout.PREFERRED_SIZE, 178, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(84, 84, 84)
+                .addComponent(lblSueldoPagar, javax.swing.GroupLayout.PREFERRED_SIZE, 184, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(23, 23, 23))
+        );
+        jPanel3Layout.setVerticalGroup(
+            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel3Layout.createSequentialGroup()
+                .addGap(16, 16, 16)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(lblSueldoPagar, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                        .addComponent(lblDescuentoTotal, javax.swing.GroupLayout.DEFAULT_SIZE, 24, Short.MAX_VALUE)
+                        .addComponent(lblSueldoFijo, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                .addGap(0, 20, Short.MAX_VALUE))
+        );
+
+        jLabel4.setFont(new java.awt.Font("Segoe UI Semibold", 0, 24)); // NOI18N
+        jLabel4.setText("GENERAR REPORTES");
+
+        jPanel4.setBackground(new java.awt.Color(120, 35, 40));
+        jPanel4.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jPanel4MouseClicked(evt);
+            }
+        });
+
+        jLabel8.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel8.setText("REGRESAR AL MENU");
+
+        javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
+        jPanel4.setLayout(jPanel4Layout);
+        jPanel4Layout.setHorizontalGroup(
+            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
+                .addContainerGap(20, Short.MAX_VALUE)
+                .addComponent(jLabel8)
+                .addGap(19, 19, 19))
+        );
+        jPanel4Layout.setVerticalGroup(
+            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel4Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jLabel8)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
+                .addContainerGap(53, Short.MAX_VALUE)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(jScrollPane1)
+                            .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(52, 52, 52))
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addComponent(jLabel4)
+                        .addGap(147, 147, 147)
+                        .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addContainerGap())))
+        );
+        jPanel2Layout.setVerticalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addContainerGap(27, Short.MAX_VALUE)
+                        .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 63, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED))
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
+                .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 323, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(25, 25, 25))
+        );
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGap(16, 16, 16)
-                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 734, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(14, Short.MAX_VALUE))
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jScrollPane1))
-                .addContainerGap())
+            .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(17, 17, 17)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 393, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, Short.MAX_VALUE))
+            .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
 
         pack();
@@ -199,96 +377,22 @@ public class ReporteFrame extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_txtCedulaActionPerformed
 
-    private void txtAnioActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtAnioActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_txtAnioActionPerformed
-
     private void btnConsultarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnConsultarActionPerformed
-   try {
-        String cedula = txtCedula.getText().trim();
-        
-        if (!cedula.matches("\\d{10}")) {
-            javax.swing.JOptionPane.showMessageDialog(this, "La cédula debe tener exactamente 10 números.", "Error", javax.swing.JOptionPane.WARNING_MESSAGE);
-            return; 
-        }
-
-        int mes = Integer.parseInt(txtMes.getText().trim());
-        int anio = Integer.parseInt(txtAnio.getText().trim());
-
-        if (mes < 1 || mes > 12) {
-            javax.swing.JOptionPane.showMessageDialog(this, "El mes debe estar entre 1 y 12.", "Error", javax.swing.JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        if (anio < 2000 || anio > 2100) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Por favor ingrese un año válido.", "Error", javax.swing.JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-       
-        controlador.ReporteController control = new controlador.ReporteController();
-        modelo.ReporteTiempoCompleto data = control.generarReporteTiempoCompleto(cedula, mes, anio);
-
-        // si el mes está vacío
-        if (data.getAsistencias().isEmpty()) {
-            javax.swing.JOptionPane.showMessageDialog(this, "El empleado existe, pero no tiene asistencias registradas en " + mes + "/" + anio + ".", "Sin datos", javax.swing.JOptionPane.INFORMATION_MESSAGE);
-            modelo.setRowCount(0); // Vaciamos la tabla
-            lblSueldoFijo.setText("Sueldo fijo: $1500.00");
-            lblDescuentoTotal.setText("Descuento total: $0.00");
-            lblSueldoPagar.setText("Sueldo a pagar: $1500.00");
-            return; // Corta la ejecución para no llenar la tabla de gana
-        }
-
-        //Limpia y cargamos las filas si todo está bien
-        modelo.setRowCount(0);
-        String[] registros = new String[8]; 
-        
-        for (modelo.Asistencia asis : data.getAsistencias()) {
-            registros[0] = asis.getFecha().toString();
-            registros[1] = (asis.getHoraEntradaManana() != null) ? asis.getHoraEntradaManana().toString() : "--:--";
-            registros[2] = (asis.getHoraSalidaManana() != null) ? asis.getHoraSalidaManana().toString() : "--:--";
-            registros[3] = (asis.getHoraEntradaTarde() != null) ? asis.getHoraEntradaTarde().toString() : "--:--";
-            registros[4] = (asis.getHoraSalidaTarde() != null) ? asis.getHoraSalidaTarde().toString() : "--:--";
-            registros[5] = String.valueOf(asis.getMinutosAtraso());
-            registros[6] = String.valueOf(asis.getHorasTrabajadas());
-            registros[7] = String.format("%.2f", asis.getDescuento());
-            
-            modelo.addRow(registros);
-        }
-
-        // Llenamos los Labels
-        lblSueldoFijo.setText("Sueldo fijo: $1500.00");
-        lblDescuentoTotal.setText(String.format("Descuento total: $%.2f", data.getDescuentoTotal()));
-        lblSueldoPagar.setText(String.format("Sueldo a pagar: $%.2f", data.getSueldoFinal()));
-
-    } catch (NumberFormatException e) {
-        javax.swing.JOptionPane.showMessageDialog(this, "Mes y Año deben ser números.", "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
-    } catch (IllegalArgumentException e) {
-        javax.swing.JOptionPane.showMessageDialog(this, e.getMessage(), "Atención", javax.swing.JOptionPane.WARNING_MESSAGE);
-    } catch (Exception e) {
-        javax.swing.JOptionPane.showMessageDialog(this, "Error crítico: " + e.getMessage(), "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
-    }
+        consultarAsistencias();
     }//GEN-LAST:event_btnConsultarActionPerformed
-    
-    private void btnExportarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExportarActionPerformed
-    try (java.sql.Connection con = new conexion.Conexion().conectar()) {
-        
-        java.util.Map<String, Object> parametros = new java.util.HashMap<>();
-        parametros.put("cedula", txtCedula.getText().trim());
-        parametros.put("mes", Integer.parseInt(txtMes.getText().trim()));
-        parametros.put("anio", Integer.parseInt(txtAnio.getText().trim()));
 
-        String ruta = "src/main/java/reportes/reporteCompleto.jasper";
-        net.sf.jasperreports.engine.JasperPrint jp = net.sf.jasperreports.engine.JasperFillManager.fillReport(ruta, parametros, con);
-        
-        // Evitamos que cierre todo el sistema al cerrar el PDF
-        net.sf.jasperreports.view.JasperViewer jv = new net.sf.jasperreports.view.JasperViewer(jp, false);
-        jv.setTitle("Reporte Mensual");
-        jv.setVisible(true);
-        
-    } catch (Exception e) {
-        javax.swing.JOptionPane.showMessageDialog(this, "Asegúrese de haber consultado primero los datos válidos.\nError: " + e.getMessage(), "Error al generar PDF", javax.swing.JOptionPane.ERROR_MESSAGE);
-    }  
+    private void btnExportarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExportarActionPerformed
+        generarReportes();
     }//GEN-LAST:event_btnExportarActionPerformed
+
+    private void jPanel4MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jPanel4MouseClicked
+        // TODO add your handling code here:
+        MenuAdminFrame menu = new MenuAdminFrame();
+        menu.setVisible(true);
+        menu.setLocationRelativeTo(null);
+
+        this.dispose();
+    }//GEN-LAST:event_jPanel4MouseClicked
 
     /**
      * @param args the command line arguments
@@ -331,15 +435,19 @@ public class ReporteFrame extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel8;
+    private com.toedter.calendar.JMonthChooser jMonthChooser;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanel4;
     private javax.swing.JScrollPane jScrollPane1;
+    private com.toedter.calendar.JYearChooser jYearChooser1;
     private javax.swing.JLabel lblDescuentoTotal;
     private javax.swing.JLabel lblSueldoFijo;
     private javax.swing.JLabel lblSueldoPagar;
     private javax.swing.JTable tblReporte;
-    private javax.swing.JTextField txtAnio;
     private javax.swing.JTextField txtCedula;
-    private javax.swing.JTextField txtMes;
     // End of variables declaration//GEN-END:variables
 }
