@@ -10,6 +10,7 @@ import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 import modelo.Asistencia;
 import modelo.ReporteTiempoCompleto;
+import modelo.ReporteTiempoParcial;
 
 /**
  *
@@ -20,9 +21,17 @@ public class ReporteFrame extends javax.swing.JFrame {
     public ReporteFrame() {
         initComponents();
         cargarColumnas();
+        cargarTipoReporte();
     }
 
     DefaultTableModel modelo;
+
+    public void cargarTipoReporte() {
+        cmbTipoReporte.removeAllItems();
+
+        cmbTipoReporte.addItem("TIEMPO_COMPLETO");
+        cmbTipoReporte.addItem("TIEMPO_PARCIAL");
+    }
 
     public void cargarColumnas() {
         String[] columnas = {"Fecha", "E. Mañana", "S. Mañana", "E. Tarde", "S. Tarde", "Atraso", "Horas", "Desc."};
@@ -47,68 +56,87 @@ public class ReporteFrame extends javax.swing.JFrame {
             int mes = jMonthChooser.getMonth() + 1;
             int anio = jYearChooser1.getYear();
 
-            if (mes < 1 || mes > 12) {
-                JOptionPane.showMessageDialog(this,
-                        "El mes debe estar entre 1 y 12.",
-                        "Error",
-                        JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            if (anio < 2000 || anio > 2100) {
-                JOptionPane.showMessageDialog(this,
-                        "Por favor ingrese un año válido.",
-                        "Error",
-                        JOptionPane.WARNING_MESSAGE);
-                return;
-            }
+            String tipoReporte = cmbTipoReporte.getSelectedItem().toString();
 
             ReporteController control = new ReporteController();
-            ReporteTiempoCompleto data
-                    = control.generarReporteTiempoCompleto(cedula, mes, anio);
-
-            if (data.getAsistencias().isEmpty()) {
-                JOptionPane.showMessageDialog(this,
-                        "El empleado existe, pero no tiene asistencias registradas en "
-                        + mes + "/" + anio + ".",
-                        "Sin datos",
-                        JOptionPane.INFORMATION_MESSAGE);
-
-                modelo.setRowCount(0);
-                lblSueldoFijo.setText("Sueldo fijo: $1500.00");
-                lblDescuentoTotal.setText("Descuento total: $0.00");
-                lblSueldoPagar.setText("Sueldo a pagar: $1500.00");
-                return;
-            }
 
             modelo.setRowCount(0);
 
-            for (Asistencia asis : data.getAsistencias()) {
-                Object[] registros = {
-                    asis.getFecha().toString(),
-                    asis.getHoraEntradaManana() != null ? asis.getHoraEntradaManana().toString() : "--:--",
-                    asis.getHoraSalidaManana() != null ? asis.getHoraSalidaManana().toString() : "--:--",
-                    asis.getHoraEntradaTarde() != null ? asis.getHoraEntradaTarde().toString() : "--:--",
-                    asis.getHoraSalidaTarde() != null ? asis.getHoraSalidaTarde().toString() : "--:--",
-                    asis.getMinutosAtraso(),
-                    asis.getHorasTrabajadas(),
-                    String.format("%.2f", asis.getDescuento())
-                };
+            // ===== TIEMPO COMPLETO =====
+            if (tipoReporte.equals("TIEMPO_COMPLETO")) {
 
-                modelo.addRow(registros);
+                ReporteTiempoCompleto data
+                        = control.generarReporteTiempoCompleto(cedula, mes, anio);
+
+                for (Asistencia asis : data.getAsistencias()) {
+
+                    Object[] registros = {
+                        asis.getFecha().toString(),
+                        asis.getHoraEntradaManana() != null ? asis.getHoraEntradaManana().toString() : "--:--",
+                        asis.getHoraSalidaManana() != null ? asis.getHoraSalidaManana().toString() : "--:--",
+                        asis.getHoraEntradaTarde() != null ? asis.getHoraEntradaTarde().toString() : "--:--",
+                        asis.getHoraSalidaTarde() != null ? asis.getHoraSalidaTarde().toString() : "--:--",
+                        asis.getMinutosAtraso(),
+                        asis.getHorasTrabajadas(),
+                        String.format("%.2f", asis.getDescuento())
+                    };
+
+                    modelo.addRow(registros);
+                }
+
+                lblSueldoFijo.setText("Sueldo fijo: $1500.00");
+                lblDescuentoTotal.setText(
+                        String.format("Descuento total: $%.2f",
+                                data.getDescuentoTotal())
+                );
+                lblSueldoPagar.setText(
+                        String.format("Sueldo a pagar: $%.2f",
+                                data.getSueldoFinal())
+                );
+            } // ===== TIEMPO PARCIAL =====
+            else if (tipoReporte.equals("TIEMPO_PARCIAL")) {
+
+                ReporteTiempoParcial data
+                        = control.generarReporteTiempoParcial(cedula, mes, anio);
+
+                for (Asistencia asis : data.getAsistencias()) {
+
+                    Object[] registros = {
+                        asis.getFecha().toString(),
+                        asis.getHoraEntradaManana() != null ? asis.getHoraEntradaManana().toString() : "--:--",
+                        asis.getHoraSalidaManana() != null ? asis.getHoraSalidaManana().toString() : "--:--",
+                        asis.getHoraEntradaTarde() != null ? asis.getHoraEntradaTarde().toString() : "--:--",
+                        asis.getHoraSalidaTarde() != null ? asis.getHoraSalidaTarde().toString() : "--:--",
+                        asis.getMinutosAtraso(),
+                        asis.getHorasTrabajadas(),
+                        "No aplica"
+                    };
+
+                    modelo.addRow(registros);
+                }
+
+                lblSueldoFijo.setText(
+                        String.format("Total horas: %.2f", data.getTotalHoras())
+                );
+
+                lblDescuentoTotal.setText(
+                        String.format("Valor hora: $%.2f", data.getValorHora())
+                );
+
+                lblSueldoPagar.setText(
+                        String.format("Sueldo a pagar: $%.2f", data.getSueldoPagar())
+                );
             }
 
-            lblSueldoFijo.setText("Sueldo fijo: $1500.00");
-            lblDescuentoTotal.setText(String.format("Descuento total: $%.2f", data.getDescuentoTotal()));
-            lblSueldoPagar.setText(String.format("Sueldo a pagar: $%.2f", data.getSueldoFinal()));
-
         } catch (IllegalArgumentException e) {
+
             JOptionPane.showMessageDialog(this,
                     e.getMessage(),
                     "Atención",
                     JOptionPane.WARNING_MESSAGE);
 
         } catch (Exception e) {
+
             JOptionPane.showMessageDialog(this,
                     "Error crítico: " + e.getMessage(),
                     "Error",
@@ -124,16 +152,30 @@ public class ReporteFrame extends javax.swing.JFrame {
             parametros.put("mes", (jMonthChooser.getMonth() + 1));
             parametros.put("anio", jYearChooser1.getYear());
 
-            String ruta = "src/main/java/reportes/reporteCompleto.jasper";
-            net.sf.jasperreports.engine.JasperPrint jp = net.sf.jasperreports.engine.JasperFillManager.fillReport(ruta, parametros, con);
+            String tipoReporte = cmbTipoReporte.getSelectedItem().toString();
 
-            // Evitamos que cierre todo el sistema al cerrar el PDF
-            net.sf.jasperreports.view.JasperViewer jv = new net.sf.jasperreports.view.JasperViewer(jp, false);
+            String ruta;
+
+            if (tipoReporte.equals("TIEMPO_COMPLETO")) {
+                ruta = "src/main/java/reportes/reporteCompleto.jasper";
+            } else {
+                ruta = "src/main/java/reportes/reporteTiempoParcial.jasper";
+            }
+
+            net.sf.jasperreports.engine.JasperPrint jp
+                    = net.sf.jasperreports.engine.JasperFillManager.fillReport(ruta, parametros, con);
+
+            net.sf.jasperreports.view.JasperViewer jv
+                    = new net.sf.jasperreports.view.JasperViewer(jp, false);
+
             jv.setTitle("Reporte Mensual");
             jv.setVisible(true);
 
         } catch (Exception e) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Asegúrese de haber consultado primero los datos válidos.\nError: " + e.getMessage(), "Error al generar PDF", javax.swing.JOptionPane.ERROR_MESSAGE);
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Asegúrese de haber consultado primero los datos válidos.\nError: " + e.getMessage(),
+                    "Error al generar PDF",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -151,6 +193,8 @@ public class ReporteFrame extends javax.swing.JFrame {
         txtCedula = new javax.swing.JTextField();
         jMonthChooser = new com.toedter.calendar.JMonthChooser();
         jYearChooser1 = new com.toedter.calendar.JYearChooser();
+        jLabel5 = new javax.swing.JLabel();
+        cmbTipoReporte = new javax.swing.JComboBox<>();
         jScrollPane1 = new javax.swing.JScrollPane();
         tblReporte = new javax.swing.JTable();
         jPanel3 = new javax.swing.JPanel();
@@ -197,6 +241,9 @@ public class ReporteFrame extends javax.swing.JFrame {
             }
         });
 
+        jLabel5.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel5.setText("TIPO");
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -207,13 +254,17 @@ public class ReporteFrame extends javax.swing.JFrame {
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(18, 18, 18)
-                                .addComponent(jYearChooser1, javax.swing.GroupLayout.PREFERRED_SIZE, 127, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(jPanel1Layout.createSequentialGroup()
                                 .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(18, 18, 18)
-                                .addComponent(txtCedula, javax.swing.GroupLayout.PREFERRED_SIZE, 127, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                .addComponent(txtCedula, javax.swing.GroupLayout.PREFERRED_SIZE, 127, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jLabel5))
+                                .addGap(18, 18, 18)
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                    .addComponent(jYearChooser1, javax.swing.GroupLayout.DEFAULT_SIZE, 127, Short.MAX_VALUE)
+                                    .addComponent(cmbTipoReporte, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                         .addGap(31, 31, 31)
                         .addComponent(btnConsultar, javax.swing.GroupLayout.PREFERRED_SIZE, 124, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 172, Short.MAX_VALUE)
@@ -244,7 +295,11 @@ public class ReporteFrame extends javax.swing.JFrame {
                             .addComponent(jLabel3)
                             .addComponent(jYearChooser1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addComponent(btnExportar))
-                .addContainerGap(35, Short.MAX_VALUE))
+                .addGap(18, 18, 18)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel5)
+                    .addComponent(cmbTipoReporte, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(14, Short.MAX_VALUE))
         );
 
         tblReporte.setModel(new javax.swing.table.DefaultTableModel(
@@ -342,20 +397,20 @@ public class ReporteFrame extends javax.swing.JFrame {
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
+                .addContainerGap()
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addContainerGap(27, Short.MAX_VALUE)
-                        .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 63, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED))
+                        .addGap(0, 27, Short.MAX_VALUE)
+                        .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 63, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addContainerGap()
                         .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 323, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 310, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(25, 25, 25))
         );
 
@@ -432,10 +487,12 @@ public class ReporteFrame extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnConsultar;
     private javax.swing.JButton btnExportar;
+    private javax.swing.JComboBox<String> cmbTipoReporte;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel8;
     private com.toedter.calendar.JMonthChooser jMonthChooser;
     private javax.swing.JPanel jPanel1;
