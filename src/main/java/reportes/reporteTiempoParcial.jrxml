@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="null" language="groovy" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="a4d5c5dc-2dcd-4804-8c74-a457a67e828b">
+	<property name="ireport.zoom" value="1.3310000000000008"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="cedula" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="mes" class="java.lang.Integer">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="anio" class="java.lang.Integer">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT
+    e.cedula,
+    CONCAT(e.nombres, ' ', e.apellidos) AS empleado_nombre,
+    e.valor_hora,
+    a.fecha,
+    a.hora_entrada_manana,
+    a.hora_salida_manana,
+    a.hora_entrada_tarde,
+    a.hora_salida_tarde,
+    a.minutos_atraso,
+    a.horas_trabajadas,
+    a.descuento,
+    (a.horas_trabajadas * e.valor_hora) AS sueldo_dia
+FROM empleados e
+INNER JOIN asistencias a
+ON e.id_empleado = a.id_empleado
+WHERE e.tipo_empleado = 'TIEMPO_PARCIAL'
+AND e.cedula = $P{cedula}
+AND MONTH(a.fecha) = $P{mes}
+AND YEAR(a.fecha) = $P{anio}
+ORDER BY a.fecha ASC]]>
+	</queryString>
+	<field name="cedula" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="empleado_nombre" class="java.lang.String"/>
+	<field name="valor_hora" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="fecha" class="java.sql.Date">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="hora_entrada_manana" class="java.sql.Time">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="hora_salida_manana" class="java.sql.Time">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="hora_entrada_tarde" class="java.sql.Time">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="hora_salida_tarde" class="java.sql.Time">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="minutos_atraso" class="java.lang.Integer">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="horas_trabajadas" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="descuento" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="sueldo_dia" class="java.math.BigDecimal"/>
+	<variable name="total_descuento_var" class="java.lang.Double" calculation="Sum">
+		<variableExpression><![CDATA[$F{descuento}]]></variableExpression>
+	</variable>
+	<variable name="total_sueldo" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{sueldo_dia}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="53" splitType="Stretch">
+			<staticText>
+				<reportElement mode="Transparent" x="92" y="0" width="401" height="36" forecolor="#000000" uuid="63ac3dbc-c4ff-4b5c-8658-11dff76717e3"/>
+				<textElement textAlignment="Center" markup="none">
+					<font size="26" isBold="true" isItalic="false" isUnderline="false" isStrikeThrough="false"/>
+				</textElement>
+				<text><![CDATA[REPORTE TIEMPO PARCIAL]]></text>
+			</staticText>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="35" splitType="Stretch">
+			<textField>
+				<reportElement x="53" y="15" width="126" height="20" uuid="d7fa4db6-5ec3-49b7-814b-e1004b98decc"/>
+				<textFieldExpression><![CDATA[$F{empleado_nombre}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="276" y="15" width="89" height="20" uuid="7b49b058-abac-4d3b-9263-f4e50d2e5db2"/>
+				<textFieldExpression><![CDATA[$F{cedula}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="466" y="15" width="87" height="20" uuid="7fb45fcb-a61f-4c30-b8d9-009b0dbc269e"/>
+				<textFieldExpression><![CDATA[$F{valor_hora}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="15" width="53" height="20" forecolor="#000000" uuid="d0b27d2e-87ac-4c59-980d-66c0ae7d0a74"/>
+				<text><![CDATA[ Empleado:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="240" y="15" width="36" height="20" forecolor="#000000" uuid="818447f0-77fd-408b-af84-a3fdcd17a386"/>
+				<text><![CDATA[Cédula:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="402" y="15" width="64" height="20" forecolor="#000000" uuid="eb459911-b5ed-4e91-ae17-5f03f79cbae2"/>
+				<text><![CDATA[Valor Hora:]]></text>
+			</staticText>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="44" splitType="Stretch">
+			<staticText>
+				<reportElement x="5" y="24" width="64" height="20" forecolor="#000000" uuid="71e38463-f06d-4736-b758-50387a70e89d"/>
+				<text><![CDATA[Fecha]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="83" y="24" width="122" height="20" forecolor="#000000" uuid="cf18dbe9-0ea4-4815-963f-849f71ff9d0c"/>
+				<text><![CDATA[Hora Entrada]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="215" y="24" width="100" height="20" forecolor="#000000" uuid="0a2e651a-2f65-41bf-8f2b-1b092a642da9"/>
+				<text><![CDATA[Hora salida]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="339" y="24" width="100" height="20" forecolor="#000000" uuid="f70eb924-4762-47f9-9b20-2f728e3ffd88"/>
+				<text><![CDATA[Horas trabajadas]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="455" y="24" width="100" height="20" forecolor="#000000" uuid="c527dc9c-8133-4b08-86e3-0c4cde30bf9b"/>
+				<text><![CDATA[Sueldo día]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="48" splitType="Stretch">
+			<textField pattern="dd/MM/yyyy">
+				<reportElement x="5" y="12" width="64" height="20" uuid="bb43a19b-a15c-44cf-9b77-cd909f7f1981"/>
+				<textFieldExpression><![CDATA[$F{fecha}]]></textFieldExpression>
+			</textField>
+			<textField pattern="HH:mm">
+				<reportElement x="83" y="12" width="122" height="20" uuid="fc5ef98d-4c02-4a3a-a097-ee63c012d700"/>
+				<textFieldExpression><![CDATA[$F{hora_entrada_manana}]]></textFieldExpression>
+			</textField>
+			<textField pattern="HH:mm">
+				<reportElement x="215" y="12" width="111" height="20" uuid="d8705503-83bb-4119-9bca-822b3fa128dc"/>
+				<textFieldExpression><![CDATA[$F{hora_salida_tarde} == null ? "--:--" : $F{hora_salida_tarde}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="339" y="12" width="100" height="20" uuid="1ae909ae-2e91-4b20-9fe6-bd1050d3f029"/>
+				<textFieldExpression><![CDATA[$F{horas_trabajadas}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="455" y="12" width="100" height="20" uuid="0ea8b59d-a310-4d1b-a7ec-db462f734450"/>
+				<textFieldExpression><![CDATA[$F{sueldo_dia}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="24" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="24" splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="79" splitType="Stretch">
+			<textField pattern="#,##0.00">
+				<reportElement x="69" y="10" width="136" height="20" uuid="da4ae69a-5e2d-4909-b2ba-91651fba32a0"/>
+				<textFieldExpression><![CDATA[$V{total_sueldo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="10" width="69" height="20" forecolor="#000000" uuid="70930a38-2254-4533-bcc3-a8d54f9e5ebc"/>
+				<text><![CDATA[Total Sueldo:]]></text>
+			</staticText>
+		</band>
+	</summary>
+</jasperReport>
