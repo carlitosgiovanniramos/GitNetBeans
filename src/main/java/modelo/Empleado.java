@@ -8,7 +8,7 @@ package modelo;
  *
  * @author Lenovo LOQ
  */
-public class Empleado {
+public abstract class Empleado {
 
     private int idEmpleado;
     private String cedula;
@@ -18,15 +18,12 @@ public class Empleado {
     private String correo;
     private String tipoEmpleado;
 
-    private double sueldoFijo;
-    private double valorHora;
-
     private boolean estado;
 
     public Empleado() {
     }
 
-    public Empleado(int idEmpleado, String cedula, String nombres, String apellidos, String telefono, String correo, String tipoEmpleado, double sueldoFijo, double valorHora, boolean estado) {
+    public Empleado(int idEmpleado, String cedula, String nombres, String apellidos, String telefono, String correo, String tipoEmpleado, boolean estado) {
         this.idEmpleado = idEmpleado;
         this.cedula = cedula;
         this.nombres = nombres;
@@ -34,8 +31,6 @@ public class Empleado {
         this.telefono = telefono;
         this.correo = correo;
         this.tipoEmpleado = tipoEmpleado;
-        this.sueldoFijo = sueldoFijo;
-        this.valorHora = valorHora;
         this.estado = estado;
     }
 
@@ -93,22 +88,6 @@ public class Empleado {
 
     public void setTipoEmpleado(String tipoEmpleado) {
         this.tipoEmpleado = tipoEmpleado;
-    }
-
-    public double getSueldoFijo() {
-        return sueldoFijo;
-    }
-
-    public void setSueldoFijo(double sueldoFijo) {
-        this.sueldoFijo = sueldoFijo;
-    }
-
-    public double getValorHora() {
-        return valorHora;
-    }
-
-    public void setValorHora(double valorHora) {
-        this.valorHora = valorHora;
     }
 
     public boolean isEstado() {

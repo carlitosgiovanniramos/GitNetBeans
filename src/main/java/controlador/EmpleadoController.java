@@ -8,6 +8,8 @@ import dao.EmpleadoDAO;
 import dao.UsuarioDAO;
 import java.util.List;
 import modelo.Empleado;
+import modelo.EmpleadoTiempoCompleto;
+import modelo.EmpleadoTiempoParcial;
 import modelo.Usuario;
 
 /**
@@ -196,12 +198,21 @@ public class EmpleadoController {
 
     private void aplicarReglasTipoEmpleado(Empleado empleado) {
 
-        if (empleado.getTipoEmpleado().equals("TIEMPO_COMPLETO")) {
-            empleado.setSueldoFijo(1500);
-            empleado.setValorHora(0);
-        } else if (empleado.getTipoEmpleado().equals("TIEMPO_PARCIAL")) {
-            empleado.setSueldoFijo(0);
-            empleado.setValorHora(5);
+        if (empleado instanceof EmpleadoTiempoCompleto) {
+            EmpleadoTiempoCompleto completo = (EmpleadoTiempoCompleto) empleado;
+            completo.setTipoEmpleado("TIEMPO_COMPLETO");
+            if (completo.getSueldoFijo() <= 0) {
+                completo.setSueldoFijo(1500);
+            }
+            return;
+        }
+
+        if (empleado instanceof EmpleadoTiempoParcial) {
+            EmpleadoTiempoParcial parcial = (EmpleadoTiempoParcial) empleado;
+            parcial.setTipoEmpleado("TIEMPO_PARCIAL");
+            if (parcial.getValorHora() <= 0) {
+                parcial.setValorHora(5);
+            }
         }
     }
 

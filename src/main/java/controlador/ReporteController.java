@@ -10,6 +10,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import modelo.Asistencia;
 import modelo.Empleado;
+import modelo.EmpleadoTiempoCompleto;
+import modelo.EmpleadoTiempoParcial;
 import modelo.ReporteTiempoCompleto;
 import modelo.ReporteTiempoParcial;
 
@@ -17,6 +19,24 @@ public class ReporteController {
 
     private EmpleadoDAO empleadoDAO = new EmpleadoDAO();
     private AsistenciaDAO asistenciaDAO = new AsistenciaDAO();
+
+    public String obtenerTipoEmpleado(String cedula) {
+        Empleado emp = empleadoDAO.buscarPorCedula(cedula);
+
+        if (emp == null) {
+            throw new IllegalArgumentException("El empleado con cédula " + cedula + " no existe.");
+        }
+
+        if (emp instanceof EmpleadoTiempoCompleto) {
+            return "TIEMPO_COMPLETO";
+        }
+
+        if (emp instanceof EmpleadoTiempoParcial) {
+            return "TIEMPO_PARCIAL";
+        }
+
+        throw new IllegalArgumentException("El tipo de empleado no es válido.");
+    }
 
     public ReporteTiempoCompleto generarReporteTiempoCompleto(String cedula, int mes, int anio) {
 
@@ -26,14 +46,14 @@ public class ReporteController {
             throw new IllegalArgumentException("El empleado con cédula " + cedula + " no existe.");
         }
 
-        if (!emp.getTipoEmpleado().equals("TIEMPO_COMPLETO")) {
+        if (!(emp instanceof EmpleadoTiempoCompleto)) {
             throw new IllegalArgumentException("El empleado no es de TIEMPO_COMPLETO. Este reporte no le corresponde.");
         }
 
         List<Asistencia> asistencias = asistenciaDAO.listarAsistenciasPorMes(emp.getIdEmpleado(), mes, anio);
         double descuentoTotal = asistenciaDAO.calcularDescuentoMensual(emp.getIdEmpleado(), mes, anio);
 
-        double sueldoFijo = 1500.00;
+        double sueldoFijo = ((EmpleadoTiempoCompleto) emp).getSueldoFijo();
         double sueldoFinal = sueldoFijo - descuentoTotal;
 
         return new ReporteTiempoCompleto(emp, asistencias, sueldoFijo, descuentoTotal, sueldoFinal);
@@ -47,16 +67,28 @@ public class ReporteController {
             throw new IllegalArgumentException("El empleado con cédula " + cedula + " no existe.");
         }
 
-        if (!emp.getTipoEmpleado().equals("TIEMPO_PARCIAL")) {
+        if (!(emp instanceof EmpleadoTiempoParcial)) {
             throw new IllegalArgumentException("El empleado no es de TIEMPO_PARCIAL. Este reporte no le corresponde.");
         }
 
         List<Asistencia> asistencias = asistenciaDAO.listarAsistenciasPorMes(emp.getIdEmpleado(), mes, anio);
 
         BigDecimal totalHoras = asistenciaDAO.calcularHorasMensuales(emp.getIdEmpleado(), mes, anio);
-        BigDecimal valorHora = new BigDecimal("5.00");
-        BigDecimal sueldoPagar = asistenciaDAO.calcularSueldoTiempoParcial(emp.getIdEmpleado(), mes, anio);
+        BigDecimal valorHora = BigDecimal.valueOf(((EmpleadoTiempoParcial) emp).getValorHora());
+        BigDecimal sueldoPagar = totalHoras.multiply(valorHora);
+        BigDecimal descuentoTotal = BigDecimal.valueOf(
+            asistenciaDAO.calcularDescuentoMensual(emp.getIdEmpleado(), mes, anio)
+        );
+        BigDecimal sueldoFinal = sueldoPagar.subtract(descuentoTotal);
 
-        return new ReporteTiempoParcial(emp, asistencias, totalHoras, valorHora, sueldoPagar);
+        return new ReporteTiempoParcial(
+            emp,
+            asistencias,
+            totalHoras,
+            valorHora,
+            sueldoPagar,
+            descuentoTotal,
+            sueldoFinal
+        );
     }
 }

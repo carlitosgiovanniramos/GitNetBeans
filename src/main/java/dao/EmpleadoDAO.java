@@ -9,9 +9,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import modelo.Empleado;
+import modelo.EmpleadoTiempoCompleto;
+import modelo.EmpleadoTiempoParcial;
 import java.util.ArrayList;
 import java.util.List;
-import java.sql.ResultSet;
 
 /**
  *
@@ -39,19 +40,7 @@ public class EmpleadoDAO {
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
-                Empleado empleado = new Empleado();
-
-                empleado.setIdEmpleado(rs.getInt("id_empleado"));
-                empleado.setCedula(rs.getString("cedula"));
-                empleado.setNombres(rs.getString("nombres"));
-                empleado.setApellidos(rs.getString("apellidos"));
-                empleado.setTelefono(rs.getString("telefono"));
-                empleado.setCorreo(rs.getString("correo"));
-                empleado.setTipoEmpleado(rs.getString("tipo_empleado"));
-                empleado.setSueldoFijo(rs.getDouble("sueldo_fijo"));
-                empleado.setValorHora(rs.getDouble("valor_hora"));
-                empleado.setEstado(rs.getBoolean("estado"));
-
+                Empleado empleado = crearEmpleadoDesdeResultSet(rs);
                 lista.add(empleado);
             }
 
@@ -85,8 +74,8 @@ public class EmpleadoDAO {
             ps.setString(4, empleado.getTelefono());
             ps.setString(5, empleado.getCorreo());
             ps.setString(6, empleado.getTipoEmpleado());
-            ps.setDouble(7, empleado.getSueldoFijo());
-            ps.setDouble(8, empleado.getValorHora());
+            ps.setDouble(7, obtenerSueldoFijo(empleado));
+            ps.setDouble(8, obtenerValorHora(empleado));
             ps.setBoolean(9, empleado.isEstado());
 
             int filas = ps.executeUpdate();
@@ -182,8 +171,8 @@ public class EmpleadoDAO {
             ps.setString(4, empleado.getTelefono());
             ps.setString(5, empleado.getCorreo());
             ps.setString(6, empleado.getTipoEmpleado());
-            ps.setDouble(7, empleado.getSueldoFijo());
-            ps.setDouble(8, empleado.getValorHora());
+            ps.setDouble(7, obtenerSueldoFijo(empleado));
+            ps.setDouble(8, obtenerValorHora(empleado));
             ps.setInt(9, empleado.getIdEmpleado());
 
             return ps.executeUpdate() > 0;
@@ -278,20 +267,7 @@ public class EmpleadoDAO {
 
             if (rs.next()) {
 
-                Empleado empleado = new Empleado();
-
-                empleado.setIdEmpleado(rs.getInt("id_empleado"));
-                empleado.setEstado(rs.getBoolean("estado"));
-                empleado.setCedula(rs.getString("cedula"));
-                empleado.setNombres(rs.getString("nombres"));
-                empleado.setApellidos(rs.getString("apellidos"));
-                empleado.setTelefono(rs.getString("telefono"));
-                empleado.setCorreo(rs.getString("correo"));
-                empleado.setTipoEmpleado(rs.getString("tipo_empleado"));
-                empleado.setSueldoFijo(rs.getDouble("sueldo_fijo"));
-                empleado.setValorHora(rs.getDouble("valor_hora"));
-
-                return empleado;
+                return crearEmpleadoDesdeResultSet(rs);
             }
 
         } catch (Exception e) {
@@ -299,6 +275,48 @@ public class EmpleadoDAO {
         }
 
         return null;
+    }
+
+    private Empleado crearEmpleadoDesdeResultSet(ResultSet rs) throws Exception {
+        String tipoEmpleado = rs.getString("tipo_empleado");
+        Empleado empleado;
+
+        if ("TIEMPO_COMPLETO".equals(tipoEmpleado)) {
+            EmpleadoTiempoCompleto completo = new EmpleadoTiempoCompleto();
+            completo.setSueldoFijo(rs.getDouble("sueldo_fijo"));
+            empleado = completo;
+        } else if ("TIEMPO_PARCIAL".equals(tipoEmpleado)) {
+            EmpleadoTiempoParcial parcial = new EmpleadoTiempoParcial();
+            parcial.setValorHora(rs.getDouble("valor_hora"));
+            empleado = parcial;
+        } else {
+            throw new IllegalArgumentException("Tipo de empleado desconocido: " + tipoEmpleado);
+        }
+
+        empleado.setIdEmpleado(rs.getInt("id_empleado"));
+        empleado.setCedula(rs.getString("cedula"));
+        empleado.setNombres(rs.getString("nombres"));
+        empleado.setApellidos(rs.getString("apellidos"));
+        empleado.setTelefono(rs.getString("telefono"));
+        empleado.setCorreo(rs.getString("correo"));
+        empleado.setTipoEmpleado(tipoEmpleado);
+        empleado.setEstado(rs.getBoolean("estado"));
+
+        return empleado;
+    }
+
+    private double obtenerSueldoFijo(Empleado empleado) {
+        if (empleado instanceof EmpleadoTiempoCompleto) {
+            return ((EmpleadoTiempoCompleto) empleado).getSueldoFijo();
+        }
+        return 0.0;
+    }
+
+    private double obtenerValorHora(Empleado empleado) {
+        if (empleado instanceof EmpleadoTiempoParcial) {
+            return ((EmpleadoTiempoParcial) empleado).getValorHora();
+        }
+        return 0.0;
     }
 
 }

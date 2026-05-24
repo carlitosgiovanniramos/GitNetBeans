@@ -14,6 +14,8 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import modelo.Empleado;
+import modelo.EmpleadoTiempoCompleto;
+import modelo.EmpleadoTiempoParcial;
 
 /**
  *
@@ -96,8 +98,8 @@ public class EmpleadoFrame extends javax.swing.JFrame {
                 empleado.getTelefono(),
                 empleado.getCorreo(),
                 empleado.getTipoEmpleado(),
-                empleado.getSueldoFijo(),
-                empleado.getValorHora()
+                obtenerSueldoFijo(empleado),
+                obtenerValorHora(empleado)
             };
 
             modeloEmpleados.addRow(fila);
@@ -112,14 +114,7 @@ public class EmpleadoFrame extends javax.swing.JFrame {
 
     public void registrarEmpleado() {
 
-        Empleado empleado = new Empleado();
-
-        empleado.setCedula(jtxtFCedula.getText().trim());
-        empleado.setNombres(jtxtFNombres.getText().trim());
-        empleado.setApellidos(jtxtFApellidos.getText().trim());
-        empleado.setTelefono(jtxtFTelefono.getText().trim());
-        empleado.setCorreo(jtxtFCorreo.getText().trim());
-        empleado.setTipoEmpleado(jcbxTipoEmpleado.getSelectedItem().toString());
+        Empleado empleado = crearEmpleadoDesdeFormulario();
 
         EmpleadoController controller = new EmpleadoController();
 
@@ -158,16 +153,9 @@ public class EmpleadoFrame extends javax.swing.JFrame {
             return;
         }
 
-        Empleado empleado = new Empleado();
+        Empleado empleado = crearEmpleadoDesdeFormulario();
 
         empleado.setIdEmpleado(idEmpleadoSeleccionado);
-
-        empleado.setCedula(jtxtFCedula.getText().trim());
-        empleado.setNombres(jtxtFNombres.getText().trim());
-        empleado.setApellidos(jtxtFApellidos.getText().trim());
-        empleado.setTelefono(jtxtFTelefono.getText().trim());
-        empleado.setCorreo(jtxtFCorreo.getText().trim());
-        empleado.setTipoEmpleado(jcbxTipoEmpleado.getSelectedItem().toString());
 
         EmpleadoController controller = new EmpleadoController();
 
@@ -276,8 +264,8 @@ public class EmpleadoFrame extends javax.swing.JFrame {
             empleado.getTelefono(),
             empleado.getCorreo(),
             empleado.getTipoEmpleado(),
-            empleado.getSueldoFijo(),
-            empleado.getValorHora()
+            obtenerSueldoFijo(empleado),
+            obtenerValorHora(empleado)
         };
 
         modeloEmpleados.addRow(fila);
@@ -343,6 +331,40 @@ public class EmpleadoFrame extends javax.swing.JFrame {
         jcbxTipoEmpleado.setSelectedIndex(0);
 
         cargarFilasEmpleados();
+    }
+
+    private Empleado crearEmpleadoDesdeFormulario() {
+        String tipoEmpleado = jcbxTipoEmpleado.getSelectedItem().toString();
+        Empleado empleado;
+
+        if ("TIEMPO_COMPLETO".equals(tipoEmpleado)) {
+            empleado = new EmpleadoTiempoCompleto();
+        } else {
+            empleado = new EmpleadoTiempoParcial();
+        }
+
+        empleado.setCedula(jtxtFCedula.getText().trim());
+        empleado.setNombres(jtxtFNombres.getText().trim());
+        empleado.setApellidos(jtxtFApellidos.getText().trim());
+        empleado.setTelefono(jtxtFTelefono.getText().trim());
+        empleado.setCorreo(jtxtFCorreo.getText().trim());
+        empleado.setTipoEmpleado(tipoEmpleado);
+
+        return empleado;
+    }
+
+    private double obtenerSueldoFijo(Empleado empleado) {
+        if (empleado instanceof EmpleadoTiempoCompleto) {
+            return ((EmpleadoTiempoCompleto) empleado).getSueldoFijo();
+        }
+        return 0.0;
+    }
+
+    private double obtenerValorHora(Empleado empleado) {
+        if (empleado instanceof EmpleadoTiempoParcial) {
+            return ((EmpleadoTiempoParcial) empleado).getValorHora();
+        }
+        return 0.0;
     }
 
     public void selectRowEmpleado() {

@@ -28,7 +28,7 @@ public class ConsultaAsistenciaFechaFrame extends javax.swing.JFrame {
      * Creates new form ConsultaAsistenciaFechaFrame
      */
     EmpleadoDAO empleadoDAO = new EmpleadoDAO();
-    Empleado empleado = new Empleado();
+    Empleado empleado;
     DefaultTableModel modeloAsistencia;
     int xMouse, yMouse;
 

@@ -63,8 +63,14 @@ WHERE e.tipo_empleado = 'TIEMPO_COMPLETO'
 	<field name="descuento" class="java.math.BigDecimal">
 		<fieldDescription><![CDATA[]]></fieldDescription>
 	</field>
+	<variable name="sueldo_fijo_var" class="java.math.BigDecimal" calculation="First">
+		<variableExpression><![CDATA[$F{sueldo_fijo}]]></variableExpression>
+	</variable>
 	<variable name="total_descuento_var" class="java.lang.Double" calculation="Sum">
 		<variableExpression><![CDATA[$F{descuento}]]></variableExpression>
+	</variable>
+	<variable name="sueldo_final_var" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{sueldo_fijo_var}.subtract(new java.math.BigDecimal($V{total_descuento_var}))]]></variableExpression>
 	</variable>
 	<background>
 		<band splitType="Stretch"/>
@@ -163,14 +169,22 @@ WHERE e.tipo_empleado = 'TIEMPO_COMPLETO'
 		<band height="54" splitType="Stretch"/>
 	</pageFooter>
 	<summary>
-		<band height="164" splitType="Stretch">
-			<textField>
-				<reportElement x="69" y="144" width="136" height="20" uuid="da4ae69a-5e2d-4909-b2ba-91651fba32a0"/>
+		<band height="180" splitType="Stretch">
+			<textField pattern="#,##0.00">
+				<reportElement x="105" y="134" width="136" height="20" uuid="da4ae69a-5e2d-4909-b2ba-91651fba32a0"/>
 				<textFieldExpression><![CDATA[$V{total_descuento_var}]]></textFieldExpression>
 			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="105" y="154" width="136" height="20" uuid="2f2f0ed0-4b17-46f1-9b5b-7d8a6f2c7e3c"/>
+				<textFieldExpression><![CDATA[$V{sueldo_final_var}]]></textFieldExpression>
+			</textField>
 			<staticText>
-				<reportElement x="5" y="144" width="64" height="20" forecolor="#000000" uuid="70930a38-2254-4533-bcc3-a8d54f9e5ebc"/>
+				<reportElement x="5" y="134" width="100" height="20" forecolor="#000000" uuid="70930a38-2254-4533-bcc3-a8d54f9e5ebc"/>
 				<text><![CDATA[Descuento:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="154" width="100" height="20" forecolor="#000000" uuid="d2f7d57d-5d1d-4a58-8d5b-f5b9ff2fe3af"/>
+				<text><![CDATA[Sueldo a pagar:]]></text>
 			</staticText>
 			<stackedBar3DChart>
 				<chart>

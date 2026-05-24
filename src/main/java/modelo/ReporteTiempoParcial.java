@@ -17,14 +17,19 @@ public class ReporteTiempoParcial {
     private BigDecimal totalHoras;
     private BigDecimal valorHora;
     private BigDecimal sueldoPagar;
+    private BigDecimal descuentoTotal;
+    private BigDecimal sueldoFinal;
 
     public ReporteTiempoParcial(Empleado empleado, List<Asistencia> asistencias,
-                                BigDecimal totalHoras, BigDecimal valorHora, BigDecimal sueldoPagar) {
+                                BigDecimal totalHoras, BigDecimal valorHora, BigDecimal sueldoPagar,
+                                BigDecimal descuentoTotal, BigDecimal sueldoFinal) {
         this.empleado = empleado;
         this.asistencias = asistencias;
         this.totalHoras = totalHoras;
         this.valorHora = valorHora;
         this.sueldoPagar = sueldoPagar;
+        this.descuentoTotal = descuentoTotal;
+        this.sueldoFinal = sueldoFinal;
     }
 
     public Empleado getEmpleado() {
@@ -45,5 +50,13 @@ public class ReporteTiempoParcial {
 
     public BigDecimal getSueldoPagar() {
         return sueldoPagar;
+    }
+
+    public BigDecimal getDescuentoTotal() {
+        return descuentoTotal;
+    }
+
+    public BigDecimal getSueldoFinal() {
+        return sueldoFinal;
     }
 }
